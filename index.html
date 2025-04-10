@@ -1,45 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="robots" content="noindex" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kaylie Affirmation Store</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        background: #f8f8f8;
-        text-align: center;
-        padding: 40px;
-      }
-      .box {
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        max-width: 500px;
-        margin: auto;
-      }
-      a.button {
-        background: #10b981;
-        padding: 14px 28px;
-        color: white;
-        text-decoration: none;
-        display: inline-block;
-        margin-top: 20px;
-        border-radius: 8px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="box">
-      <h1>Welcome to Kaylie Affirmations</h1>
-      <p>Use the button below to pay securely via MPESA or Crypto</p>
-      <a class="button" href="https://your-payment-link.com" target="_blank">Pay Now</a>
-      <p style="font-size: 12px; color: gray; margin-top: 30px;">
-        ⚠️ All digital sales are final. No refunds. <br>
-        For inquiries, contact us at kaylie254@gmail.com
-      </p>
-    </div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pay for Your Bot</title>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .payment-container {
+      background: #fff;
+      max-width: 480px;
+      margin: 40px auto;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+      color: #222;
+    }
+
+    p {
+      font-size: 1rem;
+      margin: 10px 0;
+      color: #555;
+    }
+
+    input[type="email"] {
+      width: 100%;
+      padding: 12px;
+      margin: 16px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .payment-button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #mpesaButton {
+      background-color: #28a745;
+    }
+
+    #mpesaButton:hover {
+      background-color: #218838;
+    }
+
+    #cryptoButton {
+      background-color: #007bff;
+    }
+
+    #cryptoButton:hover {
+      background-color: #0056b3;
+    }
+
+    .popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .popup-content {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    .popup-content h3 {
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+      color: #333;
+    }
+
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #007bff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="payment-container">
+    <h2>Payment Details</h2>
+    <p><strong>Bot Name:</strong> <span id="botName">Loading...</span></p>
+    <p><strong>Price:</strong> <span id="botPrice">$0.00</span></p>
+    <p><strong>Converted Price:</strong> <span id="convertedPrice">Loading...</span></p>
+
+    <input type="email" id="email" placeholder="Enter your email (required)" required/>
+
+    <button id="mpesaButton" class="payment-button">Pay with Mpesa or Airtel Money</button>
+    <button id="cryptoButton" class="payment-button">Pay with Crypto (USDT, BTC)</button>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const getQueryParam = param => new URLSearchParams(window.location.search).get(param);
+
+      let botName = getQueryParam("name") || "Unknown Bot";
+      let price = parseFloat(getQueryParam("price")) || 0;
+      let item = getQueryParam("item");
+      let exchangeRate = 140;
+      let priceKES = price * exchangeRate;
+
+      document.getElementById("botName").textContent = botName;
+      document.getElementById("botPrice").textContent = `$${price}`;
+
+      fetch("https://api.exchangerate-api.com/v4/latest/USD")
+        .then(res => res.json())
+        .then(data => {
+          exchangeRate = data.rates.KES || exchangeRate;
+          priceKES = Math.round(price * exchangeRate);
+          document.getElementById("convertedPrice").textContent = `${priceKES} KES`;
+        })
+        .catch(() => {
+          document.getElementById("convertedPrice").textContent = "Error fetching rate";
+        });
+
+      const showPopup = message => {
+        const popup = document.createElement("div");
+        popup.className = "popup";
+        popup.innerHTML = `
+          <div class="popup-content">
+            <h3>${message}</h3>
+            <div class="loader"></div>
+          </div>`;
+        document.body.appendChild(popup);
+        return popup;
+      };
+
+      const hidePopup = popup => {
+        if (popup) popup.remove();
+      };
+
+      const sendBotDownloadRequest = paymentMethod => {
+        const popup = showPopup("Loading the bot. Do not exit the page...");
+
+        fetch("https://bot-delivery-system.onrender.com/deliver-bot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item, price, payment_method: paymentMethod })
+        })
+        .then(res => res.json())
+        .then(data => {
+          hidePopup(popup);
+          if (data.success && data.downloadLink) {
+            window.location.href = data.downloadLink;
+          } else {
+            alert(data.error || "Invalid transaction. Contact support.");
+            window.location.href = "mailto:kaylie254.business@gmail.com";
+          }
+        })
+        .catch(() => {
+          hidePopup(popup);
+          alert("Server error. Contact support.");
+        });
+      };
+
+      document.getElementById("mpesaButton").addEventListener("click", () => {
+        const email = document.getElementById("email").value.trim();
+        if (!email || !/\S+@\S+\.\S+/.test(email)) {
+          alert("Please enter a valid email address.");
+          return;
+        }
+
+        const paystackAmount = priceKES * 100;
+        const handler = PaystackPop.setup({
+          key: 'pk_live_ad1c34c3a9d6d69b67adf99ab7f4e6dec180d3c4',
+          email,
+          amount: paystackAmount,
+          currency: "KES",
+          ref: "BOT-" + Math.floor(Math.random() * 1000000000 + 1),
+          callback: response => {
+            alert("Payment successful! Ref: " + response.reference);
+            sendBotDownloadRequest("paystack");
+          },
+          onClose: () => alert("Payment cancelled.")
+        });
+
+        handler.openIframe();
+      });
+
+      document.getElementById("cryptoButton").addEventListener("click", () => {
+        const popup = showPopup("⚠ System under maintenance. Please wait ⚠");
+
+        fetch("https://bot-delivery-system.onrender.com/create-invoice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item, price })
+        })
+        .then(res => res.json())
+        .then(data => {
+          hidePopup(popup);
+          if (data.success && data.paymentUrl) {
+            window.location.href = data.paymentUrl;
+          } else {
+            alert("Failed to generate invoice. Contact support.");
+          }
+        })
+        .catch(() => {
+          hidePopup(popup);
+          alert("Server error. Contact support.");
+        });
+      });
+    });
+  </script>
+</body>
 </html>
